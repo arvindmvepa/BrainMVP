@@ -59,14 +59,6 @@ def sliding_window_embedding_inference(
 
     roi_size = fall_back_tuple(roi_size, image_size_)
     image_size = tuple(max(image_size_[i], roi_size[i]) for i in range(num_spatial_dims))
-    
-    # Pad input if needed
-    pad_size = []
-    for k in range(len(inputs.shape) - 1, 1, -1):
-        diff = max(roi_size[k - 2] - inputs.shape[k], 0)
-        half = diff // 2
-        pad_size.extend([half, diff - half])
-    inputs = F.pad(inputs, pad=pad_size, mode=look_up_option(padding_mode, PytorchPadMode).value, value=cval)
 
     scan_interval = _get_scan_interval(image_size, roi_size, num_spatial_dims, overlap)
     slices = dense_patch_slices(image_size, roi_size, scan_interval)
@@ -75,9 +67,7 @@ def sliding_window_embedding_inference(
     total_slices = num_win * batch_size
 
     # Create importance map for weighting
-    importance_map = compute_importance_map(
-        get_valid_patch_size(image_size, roi_size), mode=mode, sigma_scale=sigma_scale, device=device
-    )
+    importance_map = None
 
     # Storage for embeddings and weights
     output_embeddings = None
@@ -108,48 +98,41 @@ def sliding_window_embedding_inference(
         # Initialize output tensors on first iteration
         if not _initialized:
             embedding_dim = patch_embeddings.shape[1]  # Assumes shape: (batch, embedding_dim, ...)
-            
-            # For spatial embeddings (feature maps)
-            if len(patch_embeddings.shape) > 2:
-                spatial_shape = patch_embeddings.shape[2:]
-                output_shape = [batch_size, embedding_dim] + list(image_size)
-                # Scale spatial dimensions if embedding has different spatial size than input
-                if spatial_shape != roi_size:
-                    scale_factor = [image_size[i] / spatial_shape[i] for i in range(num_spatial_dims)]
-                    scaled_image_size = [int(image_size[i] / (roi_size[i] / spatial_shape[i])) 
-                                       for i in range(num_spatial_dims)]
-                    output_shape = [batch_size, embedding_dim] + scaled_image_size
-            else:
-                # For global embeddings (vectors)
-                output_shape = [batch_size, embedding_dim] + list(image_size)
+            embedding_spatial_shape = patch_embeddings.shape[2:]  # Actual embedding spatial size
+            print(f"Embedding spatial shape: {embedding_spatial_shape}")
+            print(f"Input ROI size: {roi_size}")
+
+            scale_factor = [roi_size[i] / embedding_spatial_shape[i] for i in range(num_spatial_dims)]
+            scaled_image_size = [int(image_size[i] / scale_factor[i]) for i in range(num_spatial_dims)]
+            output_shape = [batch_size, embedding_dim] + scaled_image_size
                 
             output_embeddings = torch.zeros(output_shape, dtype=torch.float32, device=device)
             count_map = torch.zeros(output_shape, dtype=torch.float32, device=device)
             _initialized = True
 
+            importance_map = compute_importance_map(
+                get_valid_patch_size(scaled_image_size, embedding_spatial_shape),
+                mode=mode,
+                sigma_scale=sigma_scale,
+                device=device
+            )
+
+            print(f"Importance map shape: {importance_map.shape}")
+            _initialized = True
+
         # Store embeddings with importance weighting
         for idx, original_idx in zip(slice_range, unravel_slice):
             embedding = patch_embeddings[idx - slice_g]
-            
-            # Handle different embedding shapes
-            if len(embedding.shape) == 1:  # Global embedding vector
-                # Broadcast to spatial dimensions
-                spatial_importance = importance_map[0, 0]  # Get spatial weight
-                weighted_embedding = embedding.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1) * spatial_importance
-                output_embeddings[original_idx] += weighted_embedding
-                count_map[original_idx] += importance_map[0:1]  # Single channel for counting
-            else:  # Spatial embedding
-                # Resize if needed
-                if embedding.shape[1:] != importance_map.shape[1:]:
-                    embedding = F.interpolate(
-                        embedding.unsqueeze(0), 
-                        size=importance_map.shape[1:], 
-                        mode='trilinear', 
-                        align_corners=False
-                    ).squeeze(0)
+            if embedding.shape[1:] != importance_map.shape[1:]:
+                embedding = F.interpolate(
+                    embedding.unsqueeze(0), 
+                    size=importance_map.shape[1:], 
+                    mode='trilinear', 
+                    align_corners=False
+                ).squeeze(0)
                 
-                output_embeddings[original_idx] += importance_map * embedding
-                count_map[original_idx] += importance_map
+            output_embeddings[original_idx] += importance_map * embedding
+            count_map[original_idx] += importance_map
             
             # Store patch location if requested
             if return_patch_locations:
@@ -158,16 +141,8 @@ def sliding_window_embedding_inference(
 
     # Average overlapping regions
     output_embeddings = output_embeddings / count_map
-
-    # Remove padding
-    final_slicing: List[slice] = []
-    for sp in range(num_spatial_dims):
-        slice_dim = slice(pad_size[sp * 2], image_size_[num_spatial_dims - sp - 1] + pad_size[sp * 2])
-        final_slicing.insert(0, slice_dim)
-    while len(final_slicing) < len(output_embeddings.shape):
-        final_slicing.insert(0, slice(None))
     
-    final_embeddings = output_embeddings[final_slicing]
+    final_embeddings = output_embeddings
     
     if return_patch_locations:
         return final_embeddings, patch_locations
