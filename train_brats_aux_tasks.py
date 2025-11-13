@@ -37,6 +37,13 @@ def setup_logger(log_file="training.log", log_to_console=True):
     return logger
 
 
+def hard_iou(pred, tgt):
+    """pred & tgt shape  [B,4,Q]  –– binary {0,1}."""
+    intersection = (pred & tgt).sum(dim=2)         # [B,4]
+    union        = (pred | tgt).sum(dim=2) + 1e-7
+    return (intersection / union) 
+
+
 def coral_loss(logits, targets, K):
     """
     CORAL loss for ordinal classification with K discrete levels (0..K-1).
@@ -500,6 +507,7 @@ def main():
             shape_loss += loss_dict["shape_loss"]
             satellite_loss += loss_dict["satellite_loss"]
             region_loss += loss_dict["region_loss"]
+            break
 
         avg_train_loss = total_loss / len(train_loader)
         area_loss /= len(train_loader)
@@ -577,6 +585,7 @@ def main():
                 iou = hard_iou(reg_pred_bin.bool(), reg_tgt.bool())
                 running["iou_sum"] += iou.sum().item()
                 running["iou_cnt"] += iou.numel()
+                break
 
         # -------- aggregate metrics
         n_batches = len(val_loader)
@@ -679,6 +688,7 @@ def main():
                     if thresh_ not in thresh_iou_list[label_index]:
                         thresh_iou_list[label_index][thresh_] = []
                     thresh_iou_list[label_index][thresh_].append(iou.cpu()[:, label_index])
+            break
 
     # stack predictions
     area_preds = torch.cat(all_area_preds).numpy()
