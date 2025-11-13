@@ -308,25 +308,26 @@ class BrainMVPClassifier(nn.Module):
         feats3 = extract_volume_embeddings(mod3, self.encoder)
         feats4 = extract_volume_embeddings(mod4, self.encoder)
 
-        B, C, H, W, D = feats1.shape
-        spatial_size = H * W * D
-        print(feats1.shape)
-        feats1 = feats1.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
-        print(feats1.shape)
-        feats2 = feats2.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
-        feats3 = feats3.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
-        feats4 = feats4.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
-
 
         # Apply dimensionality reduction if specified
         if self.embedding_reducer is not None:
+            # move channel dimension to the end for reducer
+            feats1 = feats1.permute(0, 2, 3, 4, 1)
+            feats2 = feats2.permute(0, 2, 3, 4, 1)
+            feats3 = feats3.permute(0, 2, 3, 4, 1)
+            feats4 = feats4.permute(0, 2, 3, 4, 1)
             feats1 = self.embedding_reducer(feats1)
             feats2 = self.embedding_reducer(feats2)
             feats3 = self.embedding_reducer(feats3)
             feats4 = self.embedding_reducer(feats4)
+            # move channel dimension back to the front
+            feats1 = feats1.permute(0, 4, 1, 2, 3)
+            feats2 = feats2.permute(0, 4, 1, 2, 3)
+            feats3 = feats3.permute(0, 4, 1, 2, 3)
+            feats4 = feats4.permute(0, 4, 1, 2, 3)
 
 
-        feats = torch.cat([feats1, feats2, feats3, feats4], dim=2)  # [B, 8*8*8, embedding_dim*4]
+        feats = torch.cat([feats1, feats2, feats3, feats4], dim=1)  # [B, embedding_dim*4, H, W, D]
         feats = feats.view(B, -1)
         area_feats = feats
         shape_feats = feats
