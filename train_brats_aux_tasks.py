@@ -507,7 +507,6 @@ def main():
             shape_loss += loss_dict["shape_loss"]
             satellite_loss += loss_dict["satellite_loss"]
             region_loss += loss_dict["region_loss"]
-            break
 
         avg_train_loss = total_loss / len(train_loader)
         area_loss /= len(train_loader)
@@ -585,7 +584,6 @@ def main():
                 iou = hard_iou(reg_pred_bin.bool(), reg_tgt.bool())
                 running["iou_sum"] += iou.sum().item()
                 running["iou_cnt"] += iou.numel()
-                break
 
         # -------- aggregate metrics
         n_batches = len(val_loader)
@@ -625,8 +623,6 @@ def main():
             best_val_score = val_score
             torch.save(model.state_dict(), best_model_path)
             logger.info(f"New best avg-score {val_score:.3f}  ➜  saved to {best_model_path}")
-        
-        break
 
     logger.info("Training complete.")
 
@@ -690,7 +686,6 @@ def main():
                     if thresh_ not in thresh_iou_list[label_index]:
                         thresh_iou_list[label_index][thresh_] = []
                     thresh_iou_list[label_index][thresh_].append(iou.cpu()[:, label_index])
-            break
 
     # stack predictions
     area_preds = torch.cat(all_area_preds).numpy()
