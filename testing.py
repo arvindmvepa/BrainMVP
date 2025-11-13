@@ -140,14 +140,17 @@ def sliding_window_embedding_inference(
         weighted_embedding = importance_map.unsqueeze(0) * embedding
         output_embeddings[scaled_idx] += weighted_embedding
         count_map[scaled_idx] += importance_map.unsqueeze(0)
-        
-        # Store patch location if requested
-        if return_patch_locations:
-            patch_coords = tuple(s.start for s in original_idx[2:])
-            patch_locations.append(patch_coords)
-            return final_embeddings, patch_locations
 
-    return final_embeddings
+    # account for any overlapping sections
+    output_embeddings = output_embeddings / count_map
+        
+    # Store patch location if requested
+    if return_patch_locations:
+        patch_coords = tuple(s.start for s in original_idx[2:])
+        patch_locations.append(patch_coords)
+        return output_embeddings, patch_locations
+
+    return output_embeddings
 
 
 def _get_scan_interval(
