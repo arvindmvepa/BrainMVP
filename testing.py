@@ -108,7 +108,6 @@ def sliding_window_embedding_inference(
                 
             output_embeddings = torch.zeros(output_shape, dtype=torch.float32, device=device)
             count_map = torch.zeros(output_shape, dtype=torch.float32, device=device)
-            _initialized = True
 
             importance_map = compute_importance_map(
                 get_valid_patch_size(scaled_image_size, embedding_spatial_shape),
@@ -123,6 +122,8 @@ def sliding_window_embedding_inference(
         # Store embeddings with importance weighting
         for idx, original_idx in zip(slice_range, unravel_slice):
             embedding = patch_embeddings[idx - slice_g]
+            print(embedding.shape)
+            print(importance_map.shape)
             if embedding.shape[1:] != importance_map.shape[1:]:
                 embedding = F.interpolate(
                     embedding.unsqueeze(0), 
