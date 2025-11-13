@@ -269,18 +269,30 @@ class BrainMVPClassifier(nn.Module):
         shape_levels=7,
         satellite_levels=5,
         num_regions=11,
+        reduce_embedding_dim=None,
     ):
         super().__init__()
         self.encoder = encoder
         self.hidden_dim = hidden_dim
+        self.reduce_embedding_dim = reduce_embedding_dim
         
-        hidden_dim = self.hidden_dim * num_modalities * (8*8*8)
+        # Calculate original embedding dimensions
+        original_embedding_size = self.hidden_dim * num_modalities * (8*8*8)
+        
+        # Add optional dimensionality reduction layer
+        if reduce_embedding_dim is not None:
+            self.embedding_reducer = nn.Linear(original_embedding_size, reduce_embedding_dim)
+            classifier_input_dim = reduce_embedding_dim
+            print(f"Added embedding dimension reduction: {original_embedding_size} -> {reduce_embedding_dim}")
+        else:
+            self.embedding_reducer = None
+            classifier_input_dim = original_embedding_size
 
-        # area => [B,4,(area_levels-1)]
-        self.area_head = nn.Linear(hidden_dim, 4 * (area_levels - 1))
-        self.shape_head = nn.Linear(hidden_dim, 4 * shape_levels)
-        self.satellite_head = nn.Linear(hidden_dim, 4 * satellite_levels)
-        self.region_head = nn.Linear(hidden_dim, 4 * num_regions)
+        # Classification heads with updated input dimension
+        self.area_head = nn.Linear(classifier_input_dim, 4 * (area_levels - 1))
+        self.shape_head = nn.Linear(classifier_input_dim, 4 * shape_levels)
+        self.satellite_head = nn.Linear(classifier_input_dim, 4 * satellite_levels)
+        self.region_head = nn.Linear(classifier_input_dim, 4 * num_regions)
 
         self.area_levels = area_levels
         self.shape_levels = shape_levels
@@ -295,6 +307,13 @@ class BrainMVPClassifier(nn.Module):
         feats2 = extract_volume_embeddings(mod2, self.encoder)
         feats3 = extract_volume_embeddings(mod3, self.encoder)
         feats4 = extract_volume_embeddings(mod4, self.encoder)
+        # Apply dimensionality reduction if specified
+        if self.embedding_reducer is not None:
+            feats1 = self.embedding_reducer(feats1)
+            feats2 = self.embedding_reducer(feats2)
+            feats3 = self.embedding_reducer(feats3)
+            feats4 = self.embedding_reducer(feats4)
+
 
         feats = torch.cat([feats1, feats2, feats3, feats4], dim=1)  # [B, 512*4, 8*8*8]
         feats = feats.view(B, -1)
@@ -336,8 +355,13 @@ class TrainingArguments:
     output_dir: str = field(default="./brats_aux_output", metadata={"help": "Output directory."})
     gpu: int = field(default=0, metadata={"help": "GPU ID to use."})
     tag: str = field(default="", metadata={"help": "Additional tag for output directory."})
-    # BrainMVP specific
     embed_dim: int = field(default=512, metadata={"help": "Embedding dimension."})
+    
+    # New parameter for dimensionality reduction
+    reduce_embedding_dim: int = field(
+        default=None, 
+        metadata={"help": "Reduce embedding dimension to this size (e.g., 64). None for no reduction."}
+    )
 
 
 def main():
@@ -387,6 +411,7 @@ def main():
     model = BrainMVPClassifier(
         encoder=encoder,
         hidden_dim=args.embed_dim,
+        reduce_embedding_dim=args.reduce_embedding_dim,  # Add this line
     ).to(device)
 
     logger.info(f"Model architecture:\n{model}")
