@@ -310,8 +310,9 @@ class BrainMVPClassifier(nn.Module):
 
         B, C, H, W, D = feats1.shape
         spatial_size = H * W * D
-
+        print(feats1.shape)
         feats1 = feats1.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
+        print(feats1.shape)
         feats2 = feats2.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
         feats3 = feats3.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
         feats4 = feats4.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
