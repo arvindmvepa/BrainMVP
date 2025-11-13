@@ -119,37 +119,38 @@ def sliding_window_embedding_inference(
             print(f"Importance map shape: {importance_map.shape}")
             _initialized = True
 
-    # Store embeddings with importance weighting
-    for idx, original_idx in zip(slice_range, unravel_slice):
-        embedding = patch_embeddings[idx - slice_g]
-        print(embedding.shape)
-        print(importance_map.shape)
-        
-        # Scale the slice indices from input space to embedding space
-        scaled_idx = [original_idx[0], original_idx[1]]  # Keep batch and channel dims
-        for dim_idx in range(2, len(original_idx)):  # Scale spatial dimensions
-            s = original_idx[dim_idx]
-            if isinstance(s, slice):
-                start_scaled = int(s.start / scale_factor[dim_idx - 2]) if s.start is not None else None
-                stop_scaled = int(s.stop / scale_factor[dim_idx - 2]) if s.stop is not None else None
-                scaled_idx.append(slice(start_scaled, stop_scaled, s.step))
-            else:
-                scaled_idx.append(s)
-        print(scaled_idx)
-        
-        weighted_embedding = importance_map.unsqueeze(0) * embedding
-        output_embeddings[scaled_idx] += weighted_embedding
-        count_map[scaled_idx] += importance_map.unsqueeze(0)
+        # Store embeddings with importance weighting
+        for idx, original_idx in zip(slice_range, unravel_slice):
+            embedding = patch_embeddings[idx - slice_g]
+            print(embedding.shape)
+            print(importance_map.shape)
+            
+            # Scale the slice indices from input space to embedding space
+            scaled_idx = [original_idx[0], original_idx[1]]  # Keep batch and channel dims
+            for dim_idx in range(2, len(original_idx)):  # Scale spatial dimensions
+                s = original_idx[dim_idx]
+                if isinstance(s, slice):
+                    start_scaled = int(s.start / scale_factor[dim_idx - 2]) if s.start is not None else None
+                    stop_scaled = int(s.stop / scale_factor[dim_idx - 2]) if s.stop is not None else None
+                    scaled_idx.append(slice(start_scaled, stop_scaled, s.step))
+                else:
+                    scaled_idx.append(s)
+            print(scaled_idx)
+            
+            weighted_embedding = importance_map.unsqueeze(0) * embedding
+            output_embeddings[scaled_idx] += weighted_embedding
+            count_map[scaled_idx] += importance_map.unsqueeze(0)
 
-    # account for any overlapping sections
-    output_embeddings = output_embeddings / count_map
-        
-    # Store patch location if requested
+            # Store patch location if requested
+            if return_patch_locations:
+                patch_coords = tuple(s.start for s in original_idx[2:])
+                patch_locations.append(patch_coords)
+
+        # account for any overlapping sections
+        output_embeddings = output_embeddings / count_map
+
     if return_patch_locations:
-        patch_coords = tuple(s.start for s in original_idx[2:])
-        patch_locations.append(patch_coords)
         return output_embeddings, patch_locations
-
     return output_embeddings
 
 
