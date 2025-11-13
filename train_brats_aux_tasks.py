@@ -135,7 +135,7 @@ def compute_aux_loss(
     area_targets, shape_targets, satellite_targets, region_targets,
     K_area=10, K_shape=7, K_satellite=5, keep_only_region=False,
     region_loss="bce"
-):
+    ):
     B = area_logits.size(0)
 
     area_2d = area_logits.view(B*4, (K_area-1))
@@ -455,9 +455,7 @@ def main():
             loss, loss_dict = compute_aux_loss(
                 area_logits, shape_logits, satellite_logits, region_logits,
                 area_targets, shape_targets, satellite_targets, region_targets,
-                K_area=8, K_shape=7, K_satellite=5, keep_only_region=args.keep_only_region,
-                region_loss=args.region_loss
-            )
+                K_area=8, K_shape=7, K_satellite=5)
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
@@ -513,9 +511,7 @@ def main():
                 loss, ldict = compute_aux_loss(
                     area_logits, shape_logits, sat_logits, reg_logits,
                     area_tgt, shape_tgt, sat_tgt, reg_tgt,
-                    K_area=8, K_shape=7, K_satellite=5,
-                    keep_only_region=args.keep_only_region,
-                    region_loss=args.region_loss
+                    K_area=8, K_shape=7, K_satellite=5
                 )
                 running["loss"]       += loss.item()
                 running["area_loss"]  += ldict["area_loss"]
