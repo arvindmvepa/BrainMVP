@@ -241,8 +241,9 @@ def main():
         state_dict = checkpoint
     encoder_state_dict = {}
     for k, v in state_dict.items():
-        if 'encoder.' in k:
-            encoder_key = k.replace('encoder.', '')
+        clean_key = k.replace('module.', '')
+        if 'encoder.' in clean_key:
+            encoder_key = clean_key.replace('encoder.', '')
             encoder_state_dict[encoder_key] = v
     encoder.load_state_dict(encoder_state_dict)
     print("model loaded!")
