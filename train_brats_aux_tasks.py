@@ -328,7 +328,7 @@ class BrainMVPClassifier(nn.Module):
 
 
         feats = torch.cat([feats1, feats2, feats3, feats4], dim=1)  # [B, embedding_dim*4, H, W, D]
-        feats = feats.view(B, -1)
+        feats = feats.reshape(B, -1)
         area_feats = feats
         shape_feats = feats
         satellite_feats = feats
