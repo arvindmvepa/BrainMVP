@@ -203,8 +203,10 @@ class AuxVisionDataset(Dataset):
             transforms.ScaleIntensityRangePercentilesd(keys=['image'], lower=5, upper=95, b_min=0.0, b_max=1.0, channel_wise=True), 
             transforms.Orientationd(keys=['image'], axcodes='RAS'), 
             transforms.Spacingd(keys=['image'], pixdim=(1.0, 1.0, 1.0), mode='bilinear'),  
-            transforms.CropForegroundd(keys=['image'], source_key='image', margin=1)
-            ])
+            transforms.CropForegroundd(keys=['image'], source_key='image', margin=1),
+            transforms.CenterSpatialCropd(keys=['image'], roi_size=(128, 128, 128)), # Add these transforms for consistent 128×128×128 volumes
+            transforms.SpatialPadd(keys=['image'], spatial_size=(128, 128, 128), mode='constant', constant_values=0)
+        ])
 
     def __len__(self):
         return len(self.samples)
@@ -272,7 +274,7 @@ class BrainMVPClassifier(nn.Module):
         self.encoder = encoder
         self.hidden_dim = hidden_dim
         
-        hidden_dim = self.hidden_dim * num_modalities * (8*11*8)
+        hidden_dim = self.hidden_dim * num_modalities * (8*8*8)
 
         # area => [B,4,(area_levels-1)]
         self.area_head = nn.Linear(hidden_dim, 4 * (area_levels - 1))
@@ -294,7 +296,7 @@ class BrainMVPClassifier(nn.Module):
         feats3 = extract_volume_embeddings(mod3, self.encoder)
         feats4 = extract_volume_embeddings(mod4, self.encoder)
 
-        feats = torch.cat([feats1, feats2, feats3, feats4], dim=1)  # [B, 512*4, 8*11*8]
+        feats = torch.cat([feats1, feats2, feats3, feats4], dim=1)  # [B, 512*4, 8*8*8]
         feats = feats.view(B, -1)
         area_feats = feats
         shape_feats = feats
