@@ -174,6 +174,9 @@ def extract_volume_embeddings(volumes, encoder, patch_size=96, overlap=0.5):
     Returns:
         Aggregated embeddings for the full volume
     """
+    print(f"Volume shape: {volumes.shape}")
+    print(f"Patch size: {patch_size}")
+    print(f"ROI size will be: {(patch_size, patch_size, patch_size)}")
     
     def embedding_predictor(patches):
         """Wrapper to extract embeddings from patches"""
