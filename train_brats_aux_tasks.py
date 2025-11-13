@@ -304,10 +304,19 @@ class BrainMVPClassifier(nn.Module):
 
         # Extract features from each modality
         feats1 = extract_volume_embeddings(mod1, self.encoder)
-        print("feats1 shape:", feats1.shape)
         feats2 = extract_volume_embeddings(mod2, self.encoder)
         feats3 = extract_volume_embeddings(mod3, self.encoder)
         feats4 = extract_volume_embeddings(mod4, self.encoder)
+
+        B, C, H, W, D = feats1.shape
+        spatial_size = H * W * D
+
+        feats1 = feats1.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
+        feats2 = feats2.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
+        feats3 = feats3.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
+        feats4 = feats4.view(B, C, spatial_size).transpose(1, 2)  # [B, 512, 512]
+
+
         # Apply dimensionality reduction if specified
         if self.embedding_reducer is not None:
             feats1 = self.embedding_reducer(feats1)
@@ -316,7 +325,7 @@ class BrainMVPClassifier(nn.Module):
             feats4 = self.embedding_reducer(feats4)
 
 
-        feats = torch.cat([feats1, feats2, feats3, feats4], dim=1)  # [B, 512*4, 8*8*8]
+        feats = torch.cat([feats1, feats2, feats3, feats4], dim=2)  # [B, 8*8*8, embedding_dim*4]
         feats = feats.view(B, -1)
         area_feats = feats
         shape_feats = feats
