@@ -282,7 +282,7 @@ class BrainMVPClassifier(nn.Module):
         # Add optional dimensionality reduction layer
         if reduce_embedding_dim is not None:
             self.embedding_reducer = nn.Linear(original_embedding_size, reduce_embedding_dim)
-            classifier_input_dim = reduce_embedding_dim
+            classifier_input_dim = reduce_embedding_dim  * num_modalities * (8*8*8)
             print(f"Added embedding dimension reduction: {original_embedding_size} -> {reduce_embedding_dim}")
         else:
             self.embedding_reducer = None
