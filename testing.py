@@ -147,8 +147,8 @@ def sliding_window_embedding_inference(
                 patch_locations.append(patch_coords)
 
     print(count_map)
-    print(np.max(count_map))
-    print(np.min(count_map))
+    print(torch.max(count_map))
+    print(torch.min(count_map))
     # account for any overlapping sections
     output_embeddings = output_embeddings / count_map
 
@@ -201,7 +201,7 @@ def extract_volume_embeddings(volume, encoder, patch_size=96, overlap=0.5):
         sw_batch_size=1,  # Process one patch at a time
         predictor=embedding_predictor,
         overlap=overlap,
-        mode='gaussian',  # Use gaussian blending
+        mode='constant',  # Use constant blending
     )
     
     return embeddings
