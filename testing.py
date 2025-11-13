@@ -97,8 +97,14 @@ def sliding_window_embedding_inference(
         window_data = torch.cat([inputs[win_slice] for win_slice in unravel_slice]).to(sw_device)
         
         # Get embeddings from predictor
-        patch_embeddings = predictor(window_data, *args, **kwargs).to(device)
+        patch_embeddings = predictor(window_data, *args, **kwargs)
         
+        # Handle tuple output from UniFormer
+        if isinstance(patch_embeddings, tuple):
+            patch_embeddings = patch_embeddings[-1].to(device)  # Use the last/deepest features
+        else:
+            patch_embeddings = patch_embeddings.to(device)
+
         # Initialize output tensors on first iteration
         if not _initialized:
             embedding_dim = patch_embeddings.shape[1]  # Assumes shape: (batch, embedding_dim, ...)
@@ -248,6 +254,13 @@ def main():
     encoder.load_state_dict(encoder_state_dict)
     print("model loaded!")
     encoder.eval()
+    
+    # Set device to first GPU
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+    # Move data and model to GPU
+    volume = volume.to(device)
+    encoder = encoder.to(device)
     
     # Extract embeddings
     embeddings = extract_volume_embeddings(volume, encoder, patch_size=96, overlap=0.5)
