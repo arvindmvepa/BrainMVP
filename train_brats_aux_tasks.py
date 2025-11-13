@@ -382,9 +382,9 @@ def main():
     # Load BrainMVP model (following testing.py approach)
     logger.info(f"Loading BrainMVP encoder from {args.model_path}")
 
-    # load BrainMVP encoder 
-    encoder = SSLEncoder(num_phase=1, initial_checkpoint=checkpoint_pth)
-    checkpoint = torch.load(checkpoint_pth, map_location='cpu')
+    # load BrainMVP encoder
+    encoder = SSLEncoder(num_phase=1, initial_checkpoint=args.model_path)
+    checkpoint = torch.load(args.model_path, map_location='cpu')
     if 'state_dict' in checkpoint:
         state_dict = checkpoint['state_dict']
     else:
