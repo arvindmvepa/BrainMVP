@@ -625,6 +625,8 @@ def main():
             best_val_score = val_score
             torch.save(model.state_dict(), best_model_path)
             logger.info(f"New best avg-score {val_score:.3f}  ➜  saved to {best_model_path}")
+        
+        break
 
     logger.info("Training complete.")
 
