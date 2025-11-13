@@ -99,8 +99,6 @@ def sliding_window_embedding_inference(
         if not _initialized:
             embedding_dim = patch_embeddings.shape[1]  # Assumes shape: (batch, embedding_dim, ...)
             embedding_spatial_shape = patch_embeddings.shape[2:]  # Actual embedding spatial size
-            print(f"Embedding spatial shape: {embedding_spatial_shape}")
-            print(f"Input ROI size: {roi_size}")
 
             scale_factor = [roi_size[i] / embedding_spatial_shape[i] for i in range(num_spatial_dims)]
             scaled_image_size = [int(image_size[i] / scale_factor[i]) for i in range(num_spatial_dims)]
@@ -115,15 +113,11 @@ def sliding_window_embedding_inference(
                 sigma_scale=sigma_scale,
                 device=device
             )
-
-            print(f"Importance map shape: {importance_map.shape}")
             _initialized = True
 
         # Store embeddings with importance weighting
         for idx, original_idx in zip(slice_range, unravel_slice):
             embedding = patch_embeddings[idx - slice_g]
-            print(embedding.shape)
-            print(importance_map.shape)
             
             # Scale the slice indices from input space to embedding space
             scaled_idx = [original_idx[0], original_idx[1]]  # Keep batch and channel dims
@@ -135,7 +129,6 @@ def sliding_window_embedding_inference(
                     scaled_idx.append(slice(start_scaled, stop_scaled, s.step))
                 else:
                     scaled_idx.append(s)
-            print(scaled_idx)
             
             weighted_embedding = importance_map.unsqueeze(0) * embedding
             output_embeddings[scaled_idx] += weighted_embedding
@@ -146,9 +139,6 @@ def sliding_window_embedding_inference(
                 patch_coords = tuple(s.start for s in original_idx[2:])
                 patch_locations.append(patch_coords)
 
-    print(count_map)
-    print(torch.max(count_map))
-    print(torch.min(count_map))
     # account for any overlapping sections
     output_embeddings = output_embeddings / count_map
 
