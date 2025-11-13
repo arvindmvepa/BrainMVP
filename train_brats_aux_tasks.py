@@ -255,30 +255,6 @@ class AuxVisionDataset(Dataset):
             "seg_file": seg_file
         }
 
-    def __getitem__(self, idx):
-        data = self.samples[idx]
-        
-        # Load image (assuming npy format)
-        image = np.load(data["image_path"])
-        
-        # Convert to tensor
-        image = torch.from_numpy(image).float()
-        
-        # Apply transforms if any
-        if self.transform is not None:
-            image = self.transform(image)
-        
-        # Ensure correct shape: [C, H, W, D]
-        if image.ndim == 3:
-            image = image.unsqueeze(0)  # Add channel dimension
-        
-        target = torch.tensor(data["target"], dtype=torch.float32)
-        
-        return {
-            "image": image,
-            "target": target,
-        }
-
 
 class BrainMVPClassifier(nn.Module):
     """BrainMVP encoder with classification head"""
