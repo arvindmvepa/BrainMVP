@@ -220,10 +220,10 @@ class AuxVisionDataset(Dataset):
         mod_t2f_file = seg_file.replace("seg", "t2f")
         mod_t2w_file = seg_file.replace("seg", "t2w")
 
-        mod_t1c = self.transform(mod_t1c_file)
-        mod_t1n = self.transform(mod_t1n_file)
-        mod_t2f = self.transform(mod_t2f_file)
-        mod_t2w = self.transform(mod_t2w_file)
+        mod_t1c = self.transform({"image": mod_t1c_file})["image"]
+        mod_t1n = self.transform({"image": mod_t1n_file})["image"]
+        mod_t2f = self.transform({"image": mod_t2f_file})["image"]
+        mod_t2w = self.transform({"image": mod_t2w_file})["image"]
 
         # Prepare area, extent, solidity, bbox
         # area, extent, solidity => [4], each label an integer in correct range
