@@ -283,7 +283,7 @@ class BrainMVPClassifier(nn.Module):
         if reduce_embedding_dim is not None:
             self.embedding_reducer = nn.Linear(original_embedding_size, reduce_embedding_dim)
             classifier_input_dim = reduce_embedding_dim  * num_modalities * (8*8*8)
-            print(f"Added embedding dimension reduction: {original_embedding_size} -> {reduce_embedding_dim}")
+            print(f"Added embedding dimension reduction: {hidden_dim} -> {reduce_embedding_dim}")
         else:
             self.embedding_reducer = None
             classifier_input_dim = original_embedding_size
@@ -304,6 +304,7 @@ class BrainMVPClassifier(nn.Module):
 
         # Extract features from each modality
         feats1 = extract_volume_embeddings(mod1, self.encoder)
+        print("feats1 shape:", feats1.shape)
         feats2 = extract_volume_embeddings(mod2, self.encoder)
         feats3 = extract_volume_embeddings(mod3, self.encoder)
         feats4 = extract_volume_embeddings(mod4, self.encoder)
