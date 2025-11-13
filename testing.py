@@ -124,8 +124,9 @@ def sliding_window_embedding_inference(
             embedding = patch_embeddings[idx - slice_g]
             print(embedding.shape)
             print(importance_map.shape)
-            output_embeddings[original_idx] += importance_map * embedding
-            count_map[original_idx] += importance_map
+            weighted_embedding = importance_map.unsqueeze(0) * embedding
+            output_embeddings[original_idx] += weighted_embedding
+            count_map[original_idx] += importance_map.unsqueeze(0)
             
             # Store patch location if requested
             if return_patch_locations:
