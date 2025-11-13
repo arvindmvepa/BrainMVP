@@ -223,7 +223,8 @@ def main():
     file = "/local2/shared_data/BraTS2024-BraTS-GLI/training_data1_v2/BraTS-GLI-03064-100/BraTS-GLI-03064-100-t1c.nii.gz"
     checkpoint_pth = "BrainMVP_uniformer.pt"
     val_transform = transforms.Compose([
-        transforms.LoadImaged(keys=['image']), 
+        transforms.LoadImaged(keys=['image']),
+        transforms.EnsureChannelFirstd(keys=['image']),
         transforms.ScaleIntensityRangePercentilesd(keys=['image'], lower=5, upper=95, b_min=0.0, b_max=1.0, channel_wise=True), 
         transforms.Orientationd(keys=['image'], axcodes='RAS'), 
         transforms.Spacingd(keys=['image'], pixdim=(1.0, 1.0, 1.0), mode='bilinear'),  # Changed: mode='bilinear' instead of mode=['bilinear', 'nearest']
@@ -233,7 +234,17 @@ def main():
     print("test volume loaded and transformed")
     print(volume.shape)
     encoder = SSLEncoder(num_phase=1, initial_checkpoint=checkpoint_pth)
-    encoder.load_state_dict({k[8:]:v for k,v in state_dict.items() if 'encoder' in k})
+    checkpoint = torch.load(checkpoint_pth, map_location='cpu')
+    if 'state_dict' in checkpoint:
+        state_dict = checkpoint['state_dict']
+    else:
+        state_dict = checkpoint
+    encoder_state_dict = {}
+    for k, v in state_dict.items():
+        if 'encoder.' in clean_key:
+            encoder_key = clean_key.replace('encoder.', '')
+            encoder_state_dict[encoder_key] = v
+    encoder.load_state_dict(encoder_state_dict)
     print("model loaded!")
     encoder.eval()
     
