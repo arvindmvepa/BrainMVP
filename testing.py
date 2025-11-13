@@ -147,6 +147,8 @@ def sliding_window_embedding_inference(
                 patch_locations.append(patch_coords)
 
     print(count_map)
+    print(np.max(count_map))
+    print(np.min(count_map))
     # account for any overlapping sections
     output_embeddings = output_embeddings / count_map
 
