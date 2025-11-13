@@ -174,10 +174,6 @@ def extract_volume_embeddings(volumes, encoder, patch_size=96, overlap=0.5):
     Returns:
         Aggregated embeddings for the full volume
     """
-    print(f"Volume shape: {volumes.shape}")
-    print(f"Patch size: {patch_size}")
-    print(f"ROI size will be: {(patch_size, patch_size, patch_size)}")
-    
     def embedding_predictor(patches):
         """Wrapper to extract embeddings from patches"""
         with torch.no_grad():
@@ -188,18 +184,14 @@ def extract_volume_embeddings(volumes, encoder, patch_size=96, overlap=0.5):
             return features
     
     # Extract embeddings using sliding window for each volume
-    embeddings = []
-    for volume in volumes:
-        embedding = sliding_window_embedding_inference(
-            inputs=volume,
-            roi_size=(patch_size, patch_size, patch_size),
-            sw_batch_size=1,  # Process one patch at a time
-            predictor=embedding_predictor,
-            overlap=overlap,
-            mode='constant'
-        )
-        embeddings.append(embedding)
-    embeddings = torch.stack(embeddings)
+    embeddings = sliding_window_embedding_inference(
+        inputs=volumes,
+        roi_size=(patch_size, patch_size, patch_size),
+        sw_batch_size=1,  # Process one patch at a time
+        predictor=embedding_predictor,
+        overlap=overlap,
+        mode='constant'
+    )
     return embeddings
 
 
