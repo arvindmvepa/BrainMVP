@@ -203,7 +203,8 @@ class AuxVisionDataset(Dataset):
             transforms.ScaleIntensityRangePercentilesd(keys=['image'], lower=5, upper=95, b_min=0.0, b_max=1.0, channel_wise=True), 
             transforms.Orientationd(keys=['image'], axcodes='RAS'), 
             transforms.Spacingd(keys=['image'], pixdim=(1.0, 1.0, 1.0), mode='bilinear'),  
-            transforms.CropForegroundd(keys=['image'], source_key='image', margin=1)
+            transforms.CropForegroundd(keys=['image'], source_key='image', margin=1),
+            transforms.ToTensord(keys=['image'])
             ])
 
     def __len__(self):
