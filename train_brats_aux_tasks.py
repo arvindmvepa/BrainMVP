@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 from dataclasses import dataclass, field
 from transformers import HfArgumentParser
-from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, precision_score, recall_score
+from sklearn.metrics import roc_auc_score, accuracy_score, f1_score, precision_score, recall_score, mean_absolute_error
 from load_encoder import sliding_window_embedding_inference, extract_volume_embeddings
 import monai.transforms as transforms
 from models.Uniformer import SSLEncoder
