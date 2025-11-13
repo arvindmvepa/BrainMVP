@@ -122,6 +122,8 @@ def sliding_window_embedding_inference(
         # Store embeddings with importance weighting
         for idx, original_idx in zip(slice_range, unravel_slice):
             embedding = patch_embeddings[idx - slice_g]
+            print(embedding.shape)
+            print(importance_map.shape)
             output_embeddings[original_idx] += importance_map * embedding
             count_map[original_idx] += importance_map
             
