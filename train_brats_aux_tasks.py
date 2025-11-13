@@ -203,8 +203,7 @@ class AuxVisionDataset(Dataset):
             transforms.ScaleIntensityRangePercentilesd(keys=['image'], lower=5, upper=95, b_min=0.0, b_max=1.0, channel_wise=True), 
             transforms.Orientationd(keys=['image'], axcodes='RAS'), 
             transforms.Spacingd(keys=['image'], pixdim=(1.0, 1.0, 1.0), mode='bilinear'),  
-            transforms.CropForegroundd(keys=['image'], source_key='image', margin=1),
-            transforms.ToTensord(keys=['image'])
+            transforms.CropForegroundd(keys=['image'], source_key='image', margin=1)
             ])
 
     def __len__(self):
@@ -399,21 +398,21 @@ def main():
         train_dataset, 
         batch_size=args.batch_size, 
         shuffle=True, 
-        num_workers=4,
+        num_workers=0,
         pin_memory=True
     )
     val_loader = DataLoader(
         val_dataset, 
         batch_size=args.batch_size, 
         shuffle=False, 
-        num_workers=4,
+        num_workers=0,
         pin_memory=True
     )
     test_loader = DataLoader(
         test_dataset, 
         batch_size=args.batch_size, 
         shuffle=False, 
-        num_workers=4,
+        num_workers=0,
         pin_memory=True
     )
 
